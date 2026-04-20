@@ -18,7 +18,15 @@ DAY_GROUP_ORDER = ["total", "weekday", "weekend"]
 
 def load_station_data() -> pd.DataFrame:
     """Load station-level ridership from the API output."""
-    path = PROJECT_ROOT / "data" / "api" / "ridership" / "monthly_ridership_station.csv"
+    path = (
+        PROJECT_ROOT
+        / "scripts"
+        / "utils"
+        / "data"
+        / "api"
+        / "ridership"
+        / "monthly_ridership_station.csv"
+    )
     df = pd.read_csv(path)
     # Back-calculate OMNY ridership for proper re-aggregation
     df["omny_ridership"] = (df["ridership"] * df["omny_pct"] / 100).round(2)

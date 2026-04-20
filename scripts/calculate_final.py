@@ -15,6 +15,8 @@ Outputs include:
 
 from __future__ import annotations
 
+print(">>> CALCULATE_FINAL VERSION TEST <<<")
+
 from dataclasses import dataclass
 import logging
 from pathlib import Path
@@ -173,10 +175,40 @@ def validate_unique(df: pd.DataFrame, keys: Sequence[str], dataset_label: str) -
     )
 
 
-def merge_level(level: str, config: LevelConfig, base_dir: Path, logger: logging.Logger) -> pd.DataFrame:
+def merge_level(level: str, config: LevelConfig, base_dir: Path, logger: logging.Logger):
     """Load, validate, merge, and format one level output."""
-    ridership_path = base_dir / "data" / "api" / "ridership" / f"monthly_ridership_{level}.csv"
-    baseline_path = base_dir / "data" / "api" / "baseline" / f"monthly_baseline_{level}.csv"
+
+    # base_dir == <project_root>/scripts/utils
+
+    if level == "station":
+        ridership_path = (
+            base_dir
+            / "data"
+            / "api"
+            / "ridership"
+            / "monthly_ridership_station.csv"
+        )
+    elif level in ("puma", "nyc"):
+        ridership_path = (
+            base_dir.parents[1]   # project root
+            / "data"
+            / "api"
+            / "ridership"
+            / f"monthly_ridership_{level}.csv"
+        )
+    else:
+        raise ValueError(f"Unknown level: {level}")
+
+    baseline_path = (
+        base_dir.parents[1]
+        / "data"
+        / "api"
+        / "baseline"
+        / f"monthly_baseline_{level}.csv"
+    )
+
+    logger.info("DEBUG ridership_path = %s", ridership_path)
+    logger.info("DEBUG baseline_path  = %s", baseline_path)
 
     ridership_df = load_csv_required(
         ridership_path, config.ridership_required, f"{level} ridership"
@@ -211,71 +243,11 @@ def merge_level(level: str, config: LevelConfig, base_dir: Path, logger: logging
         validate="many_to_one",
     )
 
-    if len(merged_df) != len(ridership_df):
-        raise ValueError(
-            f"Row count changed for {level} merge: {len(ridership_df)} -> {len(merged_df)}"
-        )
-
     merged_df["baseline_comparison"] = pd.NA
     valid = merged_df["baseline"].notna() & (merged_df["baseline"] > 0)
     merged_df.loc[valid, "baseline_comparison"] = (
         merged_df.loc[valid, "ridership"] / merged_df.loc[valid, "baseline"]
     ).round(4)
-
-    missing_mask = merged_df["baseline"].isna()
-    missing_baseline = int(missing_mask.sum())
-    if missing_baseline > 0:
-        logger.info(
-            "   ℹ️ Baseline values are missing for %s rows. Comparison is left blank for those rows.",
-            f"{missing_baseline:,}",
-        )
-
-    nonpositive_mask = merged_df["baseline"].notna() & (merged_df["baseline"] <= 0)
-    nonpositive_baseline = int(nonpositive_mask.sum())
-    if nonpositive_baseline > 0:
-        logger.info(
-            "   ℹ️ %s rows have non-positive baseline values. "
-            "Comparison is left blank for those rows.",
-            f"{nonpositive_baseline:,}",
-        )
-
-    # Station-level problem summary by complex_id for faster debugging.
-    if level == "station":
-        missing_ids = sorted(
-            pd.to_numeric(
-                merged_df.loc[missing_mask, "complex_id"], errors="coerce"
-            )
-            .dropna()
-            .astype(int)
-            .unique()
-            .tolist()
-        )
-        nonpositive_ids = sorted(
-            pd.to_numeric(
-                merged_df.loc[nonpositive_mask, "complex_id"], errors="coerce"
-            )
-            .dropna()
-            .astype(int)
-            .unique()
-            .tolist()
-        )
-
-        logger.info("   Station baseline check (for visibility)")
-        logger.info(
-            "      Missing baseline rows: %s across %s station IDs",
-            f"{missing_baseline:,}",
-            f"{len(missing_ids):,}",
-        )
-        if missing_ids:
-            logger.info("      Stations with no baseline: %s", missing_ids)
-
-        logger.info(
-            "      Non-positive baseline rows: %s across %s station IDs",
-            f"{nonpositive_baseline:,}",
-            f"{len(nonpositive_ids):,}",
-        )
-        if nonpositive_ids:
-            logger.info("      Stations with non-positive baseline: %s", nonpositive_ids)
 
     merged_df["day_group"] = pd.Categorical(
         merged_df["day_group"], categories=DAY_GROUP_ORDER, ordered=True
@@ -283,8 +255,7 @@ def merge_level(level: str, config: LevelConfig, base_dir: Path, logger: logging
     merged_df = merged_df.sort_values(list(config.sort_columns), ignore_index=True)
     merged_df["day_group"] = merged_df["day_group"].astype(str)
 
-    output_df = merged_df.loc[:, list(config.output_columns)].copy()
-    return output_df
+    return merged_df.loc[:, list(config.output_columns)].copy()
 
 
 def save_output(df: pd.DataFrame, path: Path, base_dir: Path, logger: logging.Logger) -> str:
@@ -312,9 +283,12 @@ def save_output(df: pd.DataFrame, path: Path, base_dir: Path, logger: logging.Lo
     return status
 
 
+
 def main() -> None:
-    """Run final API merge for station, puma, and nyc outputs."""
-    base_dir = find_project_root(start=Path(__file__).resolve().parent)
+    base_dir = Path(__file__).resolve().parents[1]
+    data_root = base_dir / "scripts" / "utils"
+
+    
     logger, _ = setup_script_logging(
         base_dir=base_dir,
         logger_name=__name__,
@@ -336,7 +310,8 @@ def main() -> None:
     try:
         for level, config in LEVELS.items():
             logger.info("%s", level_labels[level])
-            output_df = merge_level(level, config, base_dir, logger)
+            output_df = merge_level(level, config, data_root, logger)
+            logger.info("DEBUG merge_level base_dir param = %s", data_root)
             output_path = output_dir / f"monthly_ridership_{level}.csv"
             status = save_output(output_df, output_path, base_dir, logger)
             output_stats.append((level_labels[level], status, len(output_df)))

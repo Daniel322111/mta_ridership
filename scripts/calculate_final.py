@@ -27,7 +27,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.utils.runtime import find_project_root, setup_script_logging
+from scripts.utils.socrata import repo_root
+from scripts.utils.runtime import setup_script_logging
 
 DAY_GROUP_ORDER: Tuple[str, ...] = ("total", "weekday", "weekend")
 ALLOWED_DAY_GROUPS = set(DAY_GROUP_ORDER)
@@ -175,33 +176,21 @@ def validate_unique(df: pd.DataFrame, keys: Sequence[str], dataset_label: str) -
     )
 
 
-def merge_level(level: str, config: LevelConfig, base_dir: Path, logger: logging.Logger):
+
+def merge_level(level: str, config: LevelConfig, data_root: Path, logger: logging.Logger):
     """Load, validate, merge, and format one level output."""
 
-    # base_dir == <project_root>/scripts/utils
-
-    if level == "station":
-        ridership_path = (
-            base_dir
-            / "data"
-            / "api"
-            / "ridership"
-            / "monthly_ridership_station.csv"
-        )
-    elif level in ("puma", "nyc"):
-        ridership_path = (
-            base_dir.parents[1]   # project root
-            / "data"
-            / "api"
-            / "ridership"
-            / f"monthly_ridership_{level}.csv"
-        )
-    else:
-        raise ValueError(f"Unknown level: {level}")
+    ridership_path = (
+        data_root
+        / "api"
+        / "ridership"
+        / f"monthly_ridership_{level}.csv"
+        if level != "station"
+        else data_root / "api" / "ridership" / "monthly_ridership_station.csv"
+    )
 
     baseline_path = (
-        base_dir.parents[1]
-        / "data"
+        data_root
         / "api"
         / "baseline"
         / f"monthly_baseline_{level}.csv"
@@ -285,21 +274,21 @@ def save_output(df: pd.DataFrame, path: Path, base_dir: Path, logger: logging.Lo
 
 
 def main() -> None:
-    base_dir = Path(__file__).resolve().parents[1]
-    data_root = base_dir / "scripts" / "utils"
+    project_root = repo_root()
+    data_root = project_root / "data"
 
-    
     logger, _ = setup_script_logging(
-        base_dir=base_dir,
+        base_dir=project_root,
         logger_name=__name__,
         log_filename="calculate_final_api.log",
         fmt="%(message)s",
     )
 
+
     logger.info("\n🚀 API final merge: ridership + baseline")
     logger.info("   Output directory: data/api/processed\n")
 
-    output_dir = base_dir / "data" / "api" / "processed"
+    output_dir = data_root / "api" / "processed"
     output_stats: list[tuple[str, str, int]] = []
     level_labels = {
         "station": "🚉 Station",
@@ -313,7 +302,7 @@ def main() -> None:
             output_df = merge_level(level, config, data_root, logger)
             logger.info("DEBUG merge_level base_dir param = %s", data_root)
             output_path = output_dir / f"monthly_ridership_{level}.csv"
-            status = save_output(output_df, output_path, base_dir, logger)
+            status = save_output(output_df, output_path, data_root, logger)
             output_stats.append((level_labels[level], status, len(output_df)))
             logger.info("")
 

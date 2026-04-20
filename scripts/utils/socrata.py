@@ -72,13 +72,22 @@ class SocrataRequestError(RuntimeError):
         super().__init__(f"{message} ({', '.join(parts)})")
 
 
+from pathlib import Path
+
 def repo_root() -> Path:
-    """Find the project root by looking for the .git directory."""
-    current = Path(__file__).resolve().parent
-    for directory in [current, *current.parents]:
-        if (directory / ".git").exists():
-            return directory
-    return current
+    """
+    Locate the project root by walking upward until pyproject.toml is found.
+    This is robust across refactors, execution contexts, and environments.
+    """
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "pyproject.toml").exists():
+            return parent
+    raise RuntimeError(
+        "Could not locate project root (pyproject.toml not found). "
+        "Ensure the code is running from within the project repository."
+    )
+print("Resolved repo root:", repo_root())
 
 
 def get_soda_endpoint(dataset_id: str) -> str:

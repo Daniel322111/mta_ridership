@@ -4,18 +4,23 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-import subprocess
 import sys
-from typing import Sequence
+from pathlib import Path
 
+def in_venv() -> bool:
+    return (
+        hasattr(sys, "real_prefix")
+        or sys.prefix != sys.base_prefix
+        or bool(os.environ.get("VIRTUAL_ENV"))
+    )
 
-MIN_PYTHON = (3, 10)
-VENV_DIRNAME = ".venv"
-INSTALL_STAMP = ".mta_ridership_install_stamp"
-PIPELINE_SCRIPT = Path("pipelines") / "monthly_ridership_update.py"
-
-
+if not in_venv():
+    venv_python = Path(".venv") / "bin" / "python"
+    if venv_python.exists():
+        print("🔁 Relaunching inside the project virtual environment...")
+        os.execv(str(venv_python), [str(venv_python), __file__])
+    else:
+        print("⚠️ Virtual environment not found; continuing with system Python.")
 def project_root() -> Path:
     """Return the repository root for this bootstrap script."""
     return Path(__file__).resolve().parent

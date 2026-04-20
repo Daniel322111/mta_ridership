@@ -128,11 +128,6 @@ def main(argv: Sequence[str] | None = None, *, base_dir: Path | None = None) -> 
             venv_is_new = True
 
         if venv_is_new:
-            print("Upgrading pip, setuptools, and wheel...")
-            run_checked(
-                [str(venv_python), "-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"],
-                cwd=root,
-                label="Build tool upgrade",
             )
 
         if venv_is_new or needs_dependency_install(root):

@@ -1,0 +1,12 @@
+{
+  "name": "MTA Ridership Pipeline",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "postCreateCommand": "cd /workspaces/mta_ridership && python run_pipeline.py --help",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.cwd": "/workspaces/mta_ridership"
+      }
+    }
+  }
+}

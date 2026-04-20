@@ -20,8 +20,6 @@ def load_station_data() -> pd.DataFrame:
     """Load station-level ridership from the API output."""
     path = (
         PROJECT_ROOT
-        / "scripts"
-        / "utils"
         / "data"
         / "api"
         / "ridership"

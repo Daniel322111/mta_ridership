@@ -7,20 +7,6 @@ import os
 import sys
 from pathlib import Path
 
-def in_venv() -> bool:
-    return (
-        hasattr(sys, "real_prefix")
-        or sys.prefix != sys.base_prefix
-        or bool(os.environ.get("VIRTUAL_ENV"))
-    )
-
-if not in_venv():
-    venv_python = Path(".venv") / "bin" / "python"
-    if venv_python.exists():
-        print("🔁 Relaunching inside the project virtual environment...")
-        os.execv(str(venv_python), [str(venv_python), __file__])
-    else:
-        print("⚠️ Virtual environment not found; continuing with system Python.")
 def project_root() -> Path:
     """Return the repository root for this bootstrap script."""
     return Path(__file__).resolve().parent

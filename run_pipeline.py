@@ -134,7 +134,7 @@ def main(argv: Sequence[str] | None = None, *, base_dir: Path | None = None) -> 
             reason = "new virtual environment" if venv_is_new else "pyproject.toml changed"
             print(f"Installing project dependencies ({reason})...")
             run_checked(
-                [str(venv_python), "-m", "pip", "install", "--timeout", "120", "-e", "."],
+                [str(venv_python), "-m", "pip", "install", "--timeout", "120", "--retries", "3", "-e", "."],
                 cwd=root,
                 label="Project dependency install",
             )

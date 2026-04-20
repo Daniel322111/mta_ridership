@@ -7,6 +7,11 @@ import os
 import sys
 from pathlib import Path
 
+
+MIN_PYTHON = (3, 10)
+VENV_DIRNAME = ".venv"
+INSTALL_STAMP = ".installed"
+
 def project_root() -> Path:
     """Return the repository root for this bootstrap script."""
     return Path(__file__).resolve().parent
@@ -111,8 +116,7 @@ def maybe_warn_about_socrata_setup(base_dir: Path) -> None:
 
 
 def run_pipeline_command(base_dir: Path, python_path: Path, argv: Sequence[str]) -> int:
-    """Run the monthly pipeline with the given interpreter."""
-    cmd = [str(python_path), str(base_dir / PIPELINE_SCRIPT), *argv]
+    cmd = [str(python_path), str(base_dir / "run_pipeline.py"), *argv]
     completed = subprocess.run(cmd, cwd=str(base_dir), check=False)
     return completed.returncode
 

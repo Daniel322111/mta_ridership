@@ -12,6 +12,7 @@ import pandas as pd
 
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parents[1]
+DATA_DIR = PROJECT_ROOT / "data"
 
 DAY_GROUP_ORDER = ["total", "weekday", "weekend"]
 

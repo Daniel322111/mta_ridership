@@ -1,5 +1,3 @@
-python3 -c "
-content = '''#!/usr/bin/env python3
 \"\"\"Bootstrap and run the monthly ridership pipeline in the repo virtualenv.\"\"\"
 
 from __future__ import annotations

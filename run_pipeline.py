@@ -127,9 +127,6 @@ def main(argv: Sequence[str] | None = None, *, base_dir: Path | None = None) -> 
             )
             venv_is_new = True
 
-        if venv_is_new:
-            )
-
         if venv_is_new or needs_dependency_install(root):
             reason = "new virtual environment" if venv_is_new else "pyproject.toml changed"
             print(f"Installing project dependencies ({reason})...")
